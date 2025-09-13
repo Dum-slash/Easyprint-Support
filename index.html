@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลงทะเบียนสินค้า Easyprint</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #00B900; /* LINE Green */
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="tel"], input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box; /* Important for padding */
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 25px;
+            background-color: #00c300;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .loading, .success-message {
+            text-align: center;
+            padding: 20px;
+            font-weight: bold;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="registration-form">
+        <h1>ลงทะเบียนสินค้า</h1>
+        <p>กรุณากรอกข้อมูลเพื่อลงทะเบียนและรับบริการหลังการขาย</p>
+
+        <form id="productForm">
+            <label for="firstName">ชื่อจริง</label>
+            <input type="text" id="firstName" name="firstName" required>
+
+            <label for="lastName">นามสกุล</label>
+            <input type="text" id="lastName" name="lastName" required>
+
+            <label for="phoneNumber">เบอร์โทรศัพท์</label>
+            <input type="tel" id="phoneNumber" name="phoneNumber" required>
+
+            <label for="productModel">ชื่อรุ่นสินค้า</label>
+            <input type="text" id="productModel" name="productModel" placeholder="เช่น เครื่องพิมพ์สติ๊กเกอร์ EP-100" required>
+            
+            <label for="serialNumber">Serial Number</label>
+            <input type="text" id="serialNumber" name="serialNumber" required>
+
+            <label for="purchaseDate">วันที่สั่งซื้อ</label>
+            <input type="date" id="purchaseDate" name="purchaseDate" required>
+
+            <label for="orderId">รหัสคำสั่งซื้อ (ถ้ามี)</label>
+            <input type="text" id="orderId" name="orderId">
+
+            <button type="submit" id="submit-button">ลงทะเบียน</button>
+        </form>
+    </div>
+    
+    <div id="loading-message" class="loading hidden">
+        <p>กำลังส่งข้อมูล กรุณาสักครู่...</p>
+    </div>
+
+    <div id="success-message" class="success-message hidden">
+        <p>✅ ลงทะเบียนสำเร็จ!</p>
+        <p>ขอบคุณที่ลงทะเบียนสินค้ากับ Easyprint คุณสามารถปิดหน้านี้ได้เลย</p>
+    </div>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+        async function main() {
+            // *** TODO: 2. เปลี่ยน YOUR_LIFF_ID เป็น LIFF ID ของคุณ ***
+            const myLiffId = "YOUR_LIFF_ID"; 
+            
+            // *** TODO: 3. เปลี่ยน YOUR_MAKE_WEBHOOK_URL เป็น URL ของคุณ ***
+            const webhookUrl = "YOUR_MAKE_WEBHOOK_URL";
+
+            // Initialize LIFF
+            try {
+                await liff.init({ liffId: myLiffId });
+            } catch (err) {
+                console.error('LIFF Initialization failed', err);
+                alert('เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาลองใหม่อีกครั้ง');
+                return;
+            }
+
+            if (!liff.isLoggedIn()) {
+                liff.login(); // Redirect to LINE login if not logged in
+                return;
+            }
+
+            // Get user profile
+            const profile = await liff.getProfile();
+            const lineUserId = profile.userId;
+            const displayName = profile.displayName;
+
+            // Handle form submission
+            const form = document.getElementById('productForm');
+            const submitButton = document.getElementById('submit-button');
+            const formContainer = document.getElementById('registration-form');
+            const loadingMessage = document.getElementById('loading-message');
+            const successMessage = document.getElementById('success-message');
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault(); // Prevent default form submission
+                
+                // Show loading and disable button
+                submitButton.disabled = true;
+                loadingMessage.classList.remove('hidden');
+                formContainer.classList.add('hidden');
+
+                const formData = new FormData(form);
+                const data = {
+                    lineUserId: lineUserId,
+                    displayName: displayName,
+                    firstName: formData.get('firstName'),
+                    lastName: formData.get('lastName'),
+                    phoneNumber: formData.get('phoneNumber'),
+                    productModel: formData.get('productModel'),
+                    serialNumber: formData.get('serialNumber'),
+                    purchaseDate: formData.get('purchaseDate'),
+                    orderId: formData.get('orderId')
+                };
+
+                try {
+                    // Send data to Make.com Webhook
+                    const response = await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    // Show success message
+                    loadingMessage.classList.add('hidden');
+                    successMessage.classList.remove('hidden');
+
+                    // Close LIFF window after a delay
+                    setTimeout(() => {
+                        if (liff.isInClient()) {
+                            liff.closeWindow();
+                        }
+                    }, 3000); // Close after 3 seconds
+
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    alert('เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง');
+                    // Re-enable form for retry
+                    submitButton.disabled = false;
+                    loadingMessage.classList.add('hidden');
+                    formContainer.classList.remove('hidden');
+                }
+            });
+        }
+        main();
+    </script>
+</body>
+</html>
