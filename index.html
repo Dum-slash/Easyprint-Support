@@ -81,7 +81,7 @@ console.log("ตัวแปรต่างๆ ถูกกำหนดค่า
 
 async function populateCategories() {
     console.log("ฟังก์ชัน populateCategories() เริ่มทำงาน");
-    const googleAppScriptUrl = "YOUR_GOOGLE_APP_SCRIPT_URL"; // <-- ตรวจสอบว่า URL ถูกต้อง
+    const googleAppScriptUrl = "https://script.google.com/macros/s/AKfycbxpCZgIDIRUf9UFxcmL0bc7nY7d0_6XP-u0avGEmYy1-Mepiel_5mPo-IEPxUyerE7x/exec"; // <-- ตรวจสอบว่า URL ถูกต้อง
     try {
         const response = await fetch(googleAppScriptUrl);
         console.log("ดึงข้อมูลจาก Google Apps Script สำเร็จ");
@@ -120,8 +120,8 @@ categorySelect.addEventListener('change', () => {
 
 async function main() {
     console.log("ฟังก์ชัน main() เริ่มทำงาน");
-    const myLiffId = "YOUR_LIFF_ID"; // <-- ตรวจสอบว่า LIFF ID ถูกต้อง
-    const webhookUrl = "YOUR_MAKE_WEBHOOK_URL"; // <-- ตรวจสอบว่า Webhook URL ถูกต้อง
+    const myLiffId = "2008100301-XkxaEBDq"; // <-- ตรวจสอบว่า LIFF ID ถูกต้อง
+    const webhookUrl = "https://hook.us2.make.com/9id4gbu1wpa2ogrf2t328fy696upmwd5"; // <-- ตรวจสอบว่า Webhook URL ถูกต้อง
 
     try {
         console.log("กำลังจะรัน liff.init()...");
@@ -197,5 +197,6 @@ main();
     </script>
 </body>
 </html>
+
 
 
