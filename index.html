@@ -68,82 +68,134 @@
     
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
-        // *** JavaScript อัปเดต ***
-        const categorySelect = document.getElementById('productCategory');
-        const modelSelect = document.getElementById('productModel');
-        let productData = {}; // Store fetched data globally
+       // === START OF DEBUGGING SCRIPT ===
 
-        async function populateCategories() {
-            const googleAppScriptUrl = "https://script.google.com/macros/s/AKfycbxpCZgIDIRUf9UFxcmL0bc7nY7d0_6XP-u0avGEmYy1-Mepiel_5mPo-IEPxUyerE7x/exec";
-            try {
-                const response = await fetch(googleAppScriptUrl);
-                productData = await response.json(); // Save data
-                
-                categorySelect.innerHTML = '<option value="" disabled selected>-- กรุณาเลือก --</option>';
-                Object.keys(productData).forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category;
-                    option.textContent = category;
-                    categorySelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error fetching product list:', error);
-                categorySelect.innerHTML = '<option value="" disabled selected>-- โหลดข้อมูลล้มเหลว --</option>';
-            }
-        }
+console.log("--- ಸ್ಕ್ರಿಪ್ಟ್ ಪ್ರಾರಂಭ විය ---"); // Script Started
 
-        categorySelect.addEventListener('change', () => {
-            const selectedCategory = categorySelect.value;
-            modelSelect.innerHTML = '<option value="" disabled selected>-- กรุณาเลือก --</option>';
-            modelSelect.disabled = true;
+const categorySelect = document.getElementById('productCategory');
+const modelSelect = document.getElementById('productModel');
+const form = document.getElementById('productForm');
+let productData = {};
 
-            if (selectedCategory && productData[selectedCategory]) {
-                productData[selectedCategory].forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model;
-                    option.textContent = model;
-                    modelSelect.appendChild(option);
-                });
-                modelSelect.disabled = false;
-            }
+console.log("ตัวแปรต่างๆ ถูกกำหนดค่าแล้ว"); // Variables defined
+
+async function populateCategories() {
+    console.log("ฟังก์ชัน populateCategories() เริ่มทำงาน");
+    const googleAppScriptUrl = "YOUR_GOOGLE_APP_SCRIPT_URL"; // <-- ตรวจสอบว่า URL ถูกต้อง
+    try {
+        const response = await fetch(googleAppScriptUrl);
+        console.log("ดึงข้อมูลจาก Google Apps Script สำเร็จ");
+        productData = await response.json();
+        
+        categorySelect.innerHTML = '<option value="" disabled selected>-- กรุณาเลือก --</option>';
+        Object.keys(productData).forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
         });
+        console.log("สร้าง Dropdown ประเภทสินค้าเสร็จสิ้น");
+    } catch (error) {
+        console.error("เกิดข้อผิดพลาดในการดึงข้อมูลประเภทสินค้า:", error);
+    }
+}
 
-        async function main() {
-            const myLiffId = "2008100301-XkxaEBDq"; 
-            const webhookUrl = "https://hook.us2.make.com/9id4gbu1wpa2ogrf2t328fy696upmwd5";
+categorySelect.addEventListener('change', () => {
+    console.log("ผู้ใช้เลือกประเภทสินค้า");
+    const selectedCategory = categorySelect.value;
+    modelSelect.innerHTML = '<option value="" disabled selected>-- กรุณาเลือก --</option>';
+    modelSelect.disabled = true;
 
-            await liff.init({ liffId: myLiffId });
-            if (!liff.isLoggedIn()) {
-                liff.login();
-                return;
+    if (selectedCategory && productData[selectedCategory]) {
+        productData[selectedCategory].forEach(model => {
+            const option = document.createElement('option');
+            option.value = model;
+            option.textContent = model;
+            modelSelect.appendChild(option);
+        });
+        modelSelect.disabled = false;
+        console.log("อัปเดต Dropdown รุ่นสินค้าเรียบร้อย");
+    }
+});
+
+async function main() {
+    console.log("ฟังก์ชัน main() เริ่มทำงาน");
+    const myLiffId = "YOUR_LIFF_ID"; // <-- ตรวจสอบว่า LIFF ID ถูกต้อง
+    const webhookUrl = "YOUR_MAKE_WEBHOOK_URL"; // <-- ตรวจสอบว่า Webhook URL ถูกต้อง
+
+    try {
+        console.log("กำลังจะรัน liff.init()...");
+        await liff.init({ liffId: myLiffId });
+        console.log("liff.init() ทำงานสำเร็จ!"); // *** จุดเช็คที่สำคัญมาก ***
+    } catch (error) {
+        console.error("liff.init() ล้มเหลว:", error);
+        return; // หยุดทำงานถ้า LIFF เริ่มไม่ได้
+    }
+    
+    if (!liff.isLoggedIn()) {
+        console.log("ผู้ใช้ยังไม่ได้ล็อกอิน, กำลังจะ redirect ไปหน้าล็อกอิน...");
+        liff.login();
+        return;
+    }
+
+    console.log("ผู้ใช้ล็อกอินแล้ว");
+    await populateCategories(); // Load product data
+
+    const profile = await liff.getProfile();
+    console.log("ดึงข้อมูลโปรไฟล์ผู้ใช้สำเร็จ:", profile);
+
+    console.log("กำลังจะเพิ่ม Event Listener ให้กับฟอร์ม...");
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Prevent default form submission
+        console.log("--- ปุ่มลงทะเบียนถูกคลิก! ---"); // *** จุดเช็คที่สำคัญที่สุด ***
+
+        const submitButton = document.getElementById('submit-button');
+        submitButton.disabled = true;
+        console.log("ปิดการใช้งานปุ่ม");
+
+        const formData = new FormData(form);
+        const data = {
+            lineUserId: profile.userId,
+            displayName: profile.displayName,
+            firstName: formData.get('firstName'),
+            lastName: formData.get('lastName'),
+            phoneNumber: formData.get('phoneNumber'),
+            purchaseChannel: formData.get('purchaseChannel'),
+            productCategory: formData.get('productCategory'),
+            productModel: formData.get('productModel'),
+            serialNumber: formData.get('serialNumber'),
+            purchaseDate: formData.get('purchaseDate'),
+            orderId: formData.get('orderId')
+        };
+        console.log("ข้อมูลที่จะส่งไป Make.com:", data);
+
+        try {
+            const response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            await populateCategories(); // Load data on start
+            console.log("ส่งข้อมูลไป Make.com สำเร็จ!");
+            // ... ส่วนแสดงผล Success และปิด LIFF ...
 
-            const profile = await liff.getProfile();
-            const form = document.getElementById('productForm');
-
-            form.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const formData = new FormData(form);
-                const data = {
-                    lineUserId: profile.userId,
-                    displayName: profile.displayName,
-                    firstName: formData.get('firstName'),
-                    lastName: formData.get('lastName'),
-                    phoneNumber: formData.get('phoneNumber'),
-                    purchaseChannel: formData.get('purchaseChannel'),
-                    productCategory: formData.get('productCategory'), // Field ใหม่
-                    productModel: formData.get('productModel'),
-                    serialNumber: formData.get('serialNumber'),
-                    purchaseDate: formData.get('purchaseDate'),
-                    orderId: formData.get('orderId')
-                };
-                // ส่วนที่เหลือของการส่งข้อมูลไป Make.com เหมือนเดิมครับ
-            });
+        } catch (error) {
+            console.error("เกิดข้อผิดพลาดตอนส่งข้อมูล (fetch):", error);
+            submitButton.disabled = false;
         }
-        main();
+    });
+    console.log("เพิ่ม Event Listener ให้ฟอร์มเรียบร้อยแล้ว");
+}
+
+main();
+
+// === END OF DEBUGGING SCRIPT ===
     </script>
 </body>
 </html>
+
 
